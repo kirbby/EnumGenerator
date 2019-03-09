@@ -14,14 +14,25 @@ namespace EnumGenerator
         {
             InitializeComponent();
 
-            InitCboDatabase();
+            InitCboServer();
         }
 
-        private void InitCboDatabase()
+        private void InitCboServer()
         {
-            _Connection = new SqlConnection(@"Server=.\SQLExpress; Integrated Security=true;");
+            var servers = new List<string>();
+            var instances = System.Data.Sql.SqlDataSourceEnumerator.Instance.GetDataSources();
 
-            CboDatabase.DataSource = GetListOnSelect("EXEC sp_databases", "DATABASE_NAME");
+            foreach (System.Data.DataRow instance in instances.Rows)
+            {
+                servers.Add(instance[instances.Columns["ServerName"]].ToString() + @"\" + instance[instances.Columns["InstanceName"]].ToString());
+            }
+
+            CboServers.DataSource = servers;
+        }
+
+        private void LoadCboDatabase()
+        {
+            CboDatabase.DataSource = GetListOnSelect("EXEC sp_databases", "DATABASE_NAME");          
         }
 
         private void LoadCboTable()
@@ -218,6 +229,13 @@ namespace EnumGenerator
 
                 return null;
             }
+        }
+
+        private void CboServers_SelectedValueChanged(object sender, EventArgs e)
+        {
+            _Connection = new SqlConnection(@"Server=" + CboServers.SelectedValue + "; Integrated Security=true;");
+
+            LoadCboDatabase();
         }
     }
 }
